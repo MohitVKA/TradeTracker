@@ -5,18 +5,25 @@ import { Trade } from '@/types'
 import { getTrades, deleteTrade, updateTrade, exportTradesToCSV } from '@/lib/storage'
 import { TradeTable } from '@/components/TradeTable'
 import { TradeForm } from '@/components/forms/TradeForm'
-import { BookOpen, Download, Search, X } from 'lucide-react'
+import { PageWrapper } from '@/components/ui/PageWrapper'
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton'
+import { Download, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+type ResultFilter = 'All' | 'Win' | 'Loss' | 'Breakeven'
+type TypeFilter   = 'All' | 'Long' | 'Short'
+
 export default function TradeHistoryPage() {
-  const [trades, setTrades] = useState<Trade[]>([])
-  const [search, setSearch] = useState('')
-  const [filterResult, setFilterResult] = useState<'All' | 'Win' | 'Loss' | 'Breakeven'>('All')
-  const [filterType, setFilterType] = useState<'All' | 'Long' | 'Short'>('All')
+  const [trades, setTrades]         = useState<Trade[]>([])
+  const [loaded, setLoaded]         = useState(false)
+  const [search, setSearch]         = useState('')
+  const [filterResult, setFilterResult] = useState<ResultFilter>('All')
+  const [filterType, setFilterType] = useState<TypeFilter>('All')
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
 
   useEffect(() => {
     setTrades(getTrades())
+    setLoaded(true)
   }, [])
 
   const reload = () => setTrades(getTrades())
@@ -27,8 +34,6 @@ export default function TradeHistoryPage() {
     reload()
   }
 
-  const handleEdit = (trade: Trade) => setEditingTrade(trade)
-
   const handleUpdate = (updated: Trade) => {
     updateTrade(updated)
     setEditingTrade(null)
@@ -37,95 +42,112 @@ export default function TradeHistoryPage() {
 
   const filtered = trades.filter(t => {
     const q = search.toLowerCase()
-    const matchSearch = !q || t.asset.toLowerCase().includes(q) ||
-      t.strategy.toLowerCase().includes(q) || t.notes.toLowerCase().includes(q)
+    const matchSearch = !q ||
+      t.asset.toLowerCase().includes(q) ||
+      t.strategy.toLowerCase().includes(q) ||
+      t.notes.toLowerCase().includes(q)
     const matchResult = filterResult === 'All' || t.result === filterResult
-    const matchType = filterType === 'All' || t.tradeType === filterType
+    const matchType   = filterType   === 'All' || t.tradeType === filterType
     return matchSearch && matchResult && matchType
   })
 
-  const inputCls = 'bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:border-primary/50 transition-all'
+  const inputCls = 'bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all'
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Trade History</h1>
-            <p className="text-muted-foreground text-sm">{filtered.length} of {trades.length} trades</p>
-          </div>
-        </div>
-        <button
-          onClick={() => exportTradesToCSV(filtered)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary border border-border text-sm font-medium text-foreground hover:bg-secondary/80 transition-all"
-        >
-          <Download className="w-4 h-4" />
-          Export CSV
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+    <PageWrapper>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        {/* Search */}
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           <input
-            placeholder="Search asset, strategy, notes..."
+            placeholder="Search asset, strategy, notes…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className={cn(inputCls, 'pl-9 w-full')}
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        <div className="flex gap-1 bg-secondary border border-border rounded-lg p-1">
-          {(['All', 'Win', 'Loss', 'Breakeven'] as const).map(r => (
-            <button key={r} onClick={() => setFilterResult(r)}
+        {/* Result filter pills */}
+        <div className="flex gap-1 bg-secondary border border-border rounded-md p-1 shrink-0">
+          {(['All', 'Win', 'Loss', 'Breakeven'] as ResultFilter[]).map(r => (
+            <button
+              key={r}
+              onClick={() => setFilterResult(r)}
               className={cn(
-                'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                'px-2.5 py-1 rounded-sm text-xs font-medium transition-all duration-100',
                 filterResult === r
-                  ? r === 'Win' ? 'bg-green-500/15 text-green-400' :
-                    r === 'Loss' ? 'bg-red-500/15 text-red-400' :
-                    'bg-primary/15 text-primary'
+                  ? r === 'Win'  ? 'bg-profit-subtle text-profit'
+                  : r === 'Loss' ? 'bg-loss-subtle text-loss'
+                  : 'bg-accent text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
-              )}>
+              )}
+            >
               {r}
             </button>
           ))}
         </div>
 
-        <div className="flex gap-1 bg-secondary border border-border rounded-lg p-1">
-          {(['All', 'Long', 'Short'] as const).map(t => (
-            <button key={t} onClick={() => setFilterType(t)}
+        {/* Type filter pills */}
+        <div className="flex gap-1 bg-secondary border border-border rounded-md p-1 shrink-0">
+          {(['All', 'Long', 'Short'] as TypeFilter[]).map(t => (
+            <button
+              key={t}
+              onClick={() => setFilterType(t)}
               className={cn(
-                'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                'px-2.5 py-1 rounded-sm text-xs font-medium transition-all duration-100',
                 filterType === t
-                  ? t === 'Long' ? 'bg-green-500/15 text-green-400' :
-                    t === 'Short' ? 'bg-red-500/15 text-red-400' :
-                    'bg-primary/15 text-primary'
+                  ? t === 'Long'  ? 'bg-profit-subtle text-profit'
+                  : t === 'Short' ? 'bg-loss-subtle text-loss'
+                  : 'bg-accent text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
-              )}>
+              )}
+            >
               {t}
             </button>
           ))}
         </div>
+
+        {/* Export */}
+        <button
+          onClick={() => exportTradesToCSV(filtered)}
+          className="flex items-center gap-2 px-3 py-2 rounded-md bg-card border border-border text-sm font-medium text-foreground hover:bg-accent transition-all btn-press shrink-0"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Export CSV</span>
+        </button>
       </div>
 
-      {/* Edit Modal */}
+      {/* Count */}
+      <p className="text-xs text-muted-foreground mb-3">
+        {filtered.length} of {trades.length} trade{trades.length !== 1 ? 's' : ''}
+      </p>
+
+      <TradeTable
+        trades={filtered}
+        onEdit={setEditingTrade}
+        onDelete={handleDelete}
+        loading={!loaded}
+      />
+
+      {/* Edit modal */}
       {editingTrade && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[3px] p-4">
+          <div className="bg-card border border-border rounded-xl p-5 md:p-6 w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold">Edit Trade</h2>
-              <button onClick={() => setEditingTrade(null)}
-                className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+              <h2 className="text-base font-semibold">Edit Trade</h2>
+              <button
+                onClick={() => setEditingTrade(null)}
+                className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -138,7 +160,7 @@ export default function TradeHistoryPage() {
         </div>
       )}
 
-      <TradeTable trades={filtered} onEdit={handleEdit} onDelete={handleDelete} />
-    </div>
+      <FloatingActionButton />
+    </PageWrapper>
   )
 }

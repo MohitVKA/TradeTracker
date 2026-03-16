@@ -13,30 +13,25 @@ interface TradeFormProps {
 }
 
 const EMOTIONS: EmotionLevel[] = [
-  'Very Calm', 'Calm', 'Neutral', 'Confident', 'Overconfident',
-  'Anxious', 'Very Anxious', 'Fearful', 'Greedy'
+  'Very Calm','Calm','Neutral','Confident','Overconfident',
+  'Anxious','Very Anxious','Fearful','Greedy',
 ]
-
-const STRATEGIES = [
-  'Breakout', 'Mean Reversion', 'Trend Follow', 'Scalp',
-  'Swing', 'Momentum', 'News Play', 'Other'
-]
+const STRATEGIES = ['Breakout','Mean Reversion','Trend Follow','Scalp','Swing','Momentum','News Play','Other']
 
 export function TradeForm({ initial, onSubmit, onCancel }: TradeFormProps) {
   const [form, setForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    asset: '',
-    tradeType: 'Long' as 'Long' | 'Short',
-    strategy: '',
-    entryPrice: '',
-    exitPrice: '',
-    positionSize: '',
-    stopLoss: '',
-    takeProfit: '',
-    fees: '0',
-    notes: '',
+    date:          new Date().toISOString().split('T')[0],
+    asset:         '',
+    tradeType:     'Long' as 'Long' | 'Short',
+    strategy:      '',
+    entryPrice:    '',
+    exitPrice:     '',
+    positionSize:  '',
+    stopLoss:      '',
+    takeProfit:    '',
+    fees:          '0',
+    notes:         '',
     emotionBefore: 'Neutral' as EmotionLevel,
-    screenshotUrl: '',
   })
 
   const [preview, setPreview] = useState<{ pnl: number; rMultiple: number; riskReward: number } | null>(null)
@@ -44,38 +39,27 @@ export function TradeForm({ initial, onSubmit, onCancel }: TradeFormProps) {
   useEffect(() => {
     if (initial) {
       setForm({
-        date: initial.date,
-        asset: initial.asset,
-        tradeType: initial.tradeType,
-        strategy: initial.strategy,
-        entryPrice: String(initial.entryPrice),
-        exitPrice: String(initial.exitPrice),
-        positionSize: String(initial.positionSize),
-        stopLoss: String(initial.stopLoss),
-        takeProfit: String(initial.takeProfit),
-        fees: String(initial.fees),
-        notes: initial.notes,
-        emotionBefore: initial.emotionBefore,
-        screenshotUrl: initial.screenshotUrl || '',
+        date: initial.date, asset: initial.asset, tradeType: initial.tradeType,
+        strategy: initial.strategy, entryPrice: String(initial.entryPrice),
+        exitPrice: String(initial.exitPrice), positionSize: String(initial.positionSize),
+        stopLoss: String(initial.stopLoss), takeProfit: String(initial.takeProfit),
+        fees: String(initial.fees), notes: initial.notes, emotionBefore: initial.emotionBefore,
       })
     }
   }, [initial])
 
-  // Live calculation preview
   useEffect(() => {
-    const { entryPrice, exitPrice, positionSize, stopLoss, takeProfit, fees, tradeType } = form
-    const ep = parseFloat(entryPrice), xp = parseFloat(exitPrice)
-    const ps = parseFloat(positionSize), sl = parseFloat(stopLoss)
-    const tp = parseFloat(takeProfit), f = parseFloat(fees) || 0
+    const ep = parseFloat(form.entryPrice), xp = parseFloat(form.exitPrice)
+    const ps = parseFloat(form.positionSize), sl = parseFloat(form.stopLoss)
+    const tp = parseFloat(form.takeProfit), f = parseFloat(form.fees) || 0
     if (ep && xp && ps && sl && tp) {
-      const result = calculateTrade(ep, xp, ps, sl, tp, f, tradeType)
-      setPreview(result)
+      setPreview(calculateTrade(ep, xp, ps, sl, tp, f, form.tradeType))
     } else {
       setPreview(null)
     }
   }, [form])
 
-  const set = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }))
+  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }))
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -85,52 +69,44 @@ export function TradeForm({ initial, onSubmit, onCancel }: TradeFormProps) {
     const tp = parseFloat(form.takeProfit), f = parseFloat(form.fees) || 0
     const { pnl, rMultiple, riskReward, result } = calculateTrade(ep, xp, ps, sl, tp, f, form.tradeType)
     const now = new Date().toISOString()
-    const trade: Trade = {
+    onSubmit({
       id: initial?.id || uuidv4(),
-      date: form.date,
-      asset: form.asset,
-      tradeType: form.tradeType,
-      strategy: form.strategy,
-      entryPrice: ep, exitPrice: xp,
-      positionSize: ps, stopLoss: sl, takeProfit: tp, fees: f,
-      notes: form.notes,
+      date: form.date, asset: form.asset, tradeType: form.tradeType,
+      strategy: form.strategy, entryPrice: ep, exitPrice: xp, positionSize: ps,
+      stopLoss: sl, takeProfit: tp, fees: f, notes: form.notes,
       emotionBefore: form.emotionBefore,
-      screenshotUrl: form.screenshotUrl || undefined,
       pnl, rMultiple, riskReward, result,
       createdAt: initial?.createdAt || now,
       updatedAt: now,
-    }
-    onSubmit(trade)
+    })
   }
 
-  const labelCls = 'block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider'
-  const inputCls = 'w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all font-mono'
+  const label  = 'block text-[11px] font-medium text-muted-foreground mb-1.5 uppercase tracking-[0.1em]'
+  const input  = 'w-full bg-secondary border border-border rounded-md px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all font-mono'
+  const select = 'w-full bg-secondary border border-border rounded-md px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all'
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* Row 1 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div>
-          <label className={labelCls}>Date</label>
-          <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
-            className={inputCls} required />
+          <label className={label}>Date</label>
+          <input type="date" value={form.date} onChange={e => set('date', e.target.value)} className={input} required />
         </div>
         <div>
-          <label className={labelCls}>Asset / Symbol</label>
-          <input placeholder="BTC/USD, AAPL..." value={form.asset} onChange={e => set('asset', e.target.value)}
-            className={inputCls} required />
+          <label className={label}>Asset</label>
+          <input placeholder="BTC/USD, AAPL…" value={form.asset} onChange={e => set('asset', e.target.value)} className={input} required />
         </div>
         <div>
-          <label className={labelCls}>Direction</label>
-          <div className="flex gap-2">
-            {(['Long', 'Short'] as const).map(t => (
-              <button key={t} type="button"
-                onClick={() => set('tradeType', t)}
+          <label className={label}>Direction</label>
+          <div className="flex gap-1.5">
+            {(['Long','Short'] as const).map(t => (
+              <button key={t} type="button" onClick={() => set('tradeType', t)}
                 className={cn(
-                  'flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all border',
-                  form.tradeType === t && t === 'Long' ? 'bg-green-500/15 border-green-500/40 text-green-400' :
-                  form.tradeType === t && t === 'Short' ? 'bg-red-500/15 border-red-500/40 text-red-400' :
-                  'bg-secondary border-border text-muted-foreground hover:text-foreground'
+                  'flex-1 py-2.5 rounded-md text-sm font-medium transition-all duration-150 border',
+                  form.tradeType === t && t === 'Long'  ? 'bg-profit-subtle border-profit/40 text-profit' :
+                  form.tradeType === t && t === 'Short' ? 'bg-loss-subtle border-loss/40 text-loss' :
+                  'bg-secondary border-border text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}>
                 {t}
               </button>
@@ -138,90 +114,80 @@ export function TradeForm({ initial, onSubmit, onCancel }: TradeFormProps) {
           </div>
         </div>
         <div>
-          <label className={labelCls}>Strategy</label>
-          <select value={form.strategy} onChange={e => set('strategy', e.target.value)}
-            className={inputCls} required>
-            <option value="">Select...</option>
+          <label className={label}>Strategy</label>
+          <select value={form.strategy} onChange={e => set('strategy', e.target.value)} className={select} required>
+            <option value="">Select…</option>
             {STRATEGIES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
       </div>
 
-      {/* Row 2 — Prices */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Prices */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div>
-          <label className={labelCls}>Entry Price</label>
-          <input type="number" step="any" placeholder="0.00" value={form.entryPrice}
-            onChange={e => set('entryPrice', e.target.value)} className={inputCls} required />
+          <label className={label}>Entry Price</label>
+          <input type="number" step="any" placeholder="0.00" value={form.entryPrice} onChange={e => set('entryPrice', e.target.value)} className={input} required />
         </div>
         <div>
-          <label className={labelCls}>Exit Price</label>
-          <input type="number" step="any" placeholder="0.00" value={form.exitPrice}
-            onChange={e => set('exitPrice', e.target.value)} className={inputCls} required />
+          <label className={label}>Exit Price</label>
+          <input type="number" step="any" placeholder="0.00" value={form.exitPrice}  onChange={e => set('exitPrice',  e.target.value)} className={input} required />
         </div>
         <div>
-          <label className={labelCls}>Position Size</label>
-          <input type="number" step="any" placeholder="1" value={form.positionSize}
-            onChange={e => set('positionSize', e.target.value)} className={inputCls} required />
+          <label className={label}>Position Size</label>
+          <input type="number" step="any" placeholder="1"    value={form.positionSize} onChange={e => set('positionSize', e.target.value)} className={input} required />
         </div>
         <div>
-          <label className={labelCls}>Fees</label>
-          <input type="number" step="any" placeholder="0.00" value={form.fees}
-            onChange={e => set('fees', e.target.value)} className={inputCls} />
+          <label className={label}>Fees</label>
+          <input type="number" step="any" placeholder="0.00" value={form.fees} onChange={e => set('fees', e.target.value)} className={input} />
         </div>
       </div>
 
-      {/* Row 3 — SL / TP */}
+      {/* SL / TP */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Stop Loss</label>
-          <input type="number" step="any" placeholder="0.00" value={form.stopLoss}
-            onChange={e => set('stopLoss', e.target.value)} className={inputCls} required />
+          <label className={label}>Stop Loss</label>
+          <input type="number" step="any" placeholder="0.00" value={form.stopLoss}   onChange={e => set('stopLoss',   e.target.value)} className={input} required />
         </div>
         <div>
-          <label className={labelCls}>Take Profit</label>
-          <input type="number" step="any" placeholder="0.00" value={form.takeProfit}
-            onChange={e => set('takeProfit', e.target.value)} className={inputCls} required />
+          <label className={label}>Take Profit</label>
+          <input type="number" step="any" placeholder="0.00" value={form.takeProfit} onChange={e => set('takeProfit', e.target.value)} className={input} required />
         </div>
       </div>
 
-      {/* Live Preview */}
+      {/* Live preview */}
       {preview && (
-        <div className="grid grid-cols-3 gap-3 p-4 rounded-xl bg-secondary/50 border border-border">
-          <div className="text-center">
-            <div className="text-xs text-muted-foreground mb-1">PnL</div>
-            <div className={cn('text-lg font-bold font-mono', preview.pnl >= 0 ? 'text-green-400' : 'text-red-400')}>
-              {preview.pnl >= 0 ? '+' : ''}{preview.pnl.toFixed(2)}
+        <div className="grid grid-cols-3 gap-3 p-4 rounded-lg bg-secondary/60 border border-border">
+          {[
+            { label: 'PnL',          val: `${preview.pnl >= 0 ? '+' : ''}${preview.pnl.toFixed(2)}`,          positive: preview.pnl >= 0 },
+            { label: 'R Multiple',   val: `${preview.rMultiple >= 0 ? '+' : ''}${preview.rMultiple.toFixed(2)}R`, positive: preview.rMultiple >= 0 },
+            { label: 'Risk : Reward',val: `1 : ${preview.riskReward.toFixed(2)}`,                              positive: true, neutral: true },
+          ].map(({ label: lbl, val, positive, neutral }) => (
+            <div key={lbl} className="text-center">
+              <div className="text-[11px] text-muted-foreground mb-1 uppercase tracking-[0.08em]">{lbl}</div>
+              <div className={cn(
+                'text-base font-semibold font-mono',
+                neutral ? 'text-foreground' : positive ? 'text-profit' : 'text-loss'
+              )}>
+                {val}
+              </div>
             </div>
-          </div>
-          <div className="text-center border-x border-border">
-            <div className="text-xs text-muted-foreground mb-1">R Multiple</div>
-            <div className={cn('text-lg font-bold font-mono', preview.rMultiple >= 0 ? 'text-green-400' : 'text-red-400')}>
-              {preview.rMultiple >= 0 ? '+' : ''}{preview.rMultiple.toFixed(2)}R
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-muted-foreground mb-1">Risk:Reward</div>
-            <div className="text-lg font-bold font-mono text-foreground">
-              1:{preview.riskReward.toFixed(2)}
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
       {/* Emotion */}
       <div>
-        <label className={labelCls}>Emotion Before Trade</label>
-        <div className="flex flex-wrap gap-2">
-          {EMOTIONS.map(e => (
-            <button key={e} type="button" onClick={() => set('emotionBefore', e)}
+        <label className={label}>Emotion Before Trade</label>
+        <div className="flex flex-wrap gap-1.5">
+          {EMOTIONS.map(em => (
+            <button key={em} type="button" onClick={() => set('emotionBefore', em)}
               className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium transition-all border',
-                form.emotionBefore === e
-                  ? 'bg-primary/20 border-primary/40 text-primary'
-                  : 'bg-secondary border-border text-muted-foreground hover:text-foreground'
+                'px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-100 border',
+                form.emotionBefore === em
+                  ? 'bg-primary/12 border-primary/30 text-primary'
+                  : 'bg-secondary border-border text-muted-foreground hover:text-foreground hover:bg-accent'
               )}>
-              {e}
+              {em}
             </button>
           ))}
         </div>
@@ -229,21 +195,21 @@ export function TradeForm({ initial, onSubmit, onCancel }: TradeFormProps) {
 
       {/* Notes */}
       <div>
-        <label className={labelCls}>Notes</label>
-        <textarea rows={3} placeholder="Trade rationale, observations..."
+        <label className={label}>Notes</label>
+        <textarea rows={3} placeholder="Trade rationale, setup, observations…"
           value={form.notes} onChange={e => set('notes', e.target.value)}
-          className={cn(inputCls, 'resize-none font-sans')} />
+          className={cn(input, 'resize-none font-sans')} />
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-2.5 pt-1">
         <button type="submit"
-          className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-semibold text-sm hover:bg-primary/90 transition-all">
+          className="flex-1 bg-primary text-primary-foreground py-3 rounded-md font-medium text-sm hover:bg-primary/90 transition-all btn-press">
           {initial ? 'Update Trade' : 'Log Trade'}
         </button>
         {onCancel && (
           <button type="button" onClick={onCancel}
-            className="px-6 bg-secondary border border-border text-foreground py-3 rounded-xl font-semibold text-sm hover:bg-secondary/80 transition-all">
+            className="px-5 bg-secondary border border-border text-foreground py-3 rounded-md font-medium text-sm hover:bg-accent transition-all btn-press">
             Cancel
           </button>
         )}

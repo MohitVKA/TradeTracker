@@ -1,92 +1,146 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 92%;
-    --card: 222 40% 8%;
-    --card-foreground: 210 40% 92%;
-    --popover: 222 40% 9%;
-    --popover-foreground: 210 40% 92%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 5%;
-    --secondary: 222 35% 13%;
-    --secondary-foreground: 210 40% 80%;
-    --muted: 222 35% 12%;
-    --muted-foreground: 215 20% 45%;
-    --accent: 217 91% 60%;
-    --accent-foreground: 222 47% 5%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 222 30% 14%;
-    --input: 222 35% 11%;
-    --ring: 217 91% 60%;
-    --radius: 0.6rem;
+  /* ── Dark theme (default) ── */
+  :root,
+  .dark {
+    --background:     220 13% 7%;
+    --foreground:     210 16% 93%;
+    --card:           220 12% 10%;
+    --card-foreground:210 16% 93%;
+    --popover:        220 12% 11%;
+    --popover-foreground: 210 16% 93%;
+    --primary:        213 60% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary:      220 11% 15%;
+    --secondary-foreground: 210 12% 72%;
+    --muted:          220 11% 13%;
+    --muted-foreground: 215 10% 46%;
+    --accent:         220 11% 16%;
+    --accent-foreground: 210 16% 93%;
+    --destructive:    0 63% 54%;
+    --destructive-foreground: 0 0% 100%;
+    --border:         220 10% 16%;
+    --input:          220 11% 13%;
+    --ring:           213 60% 52%;
+    --radius:         0.5rem;
+
+    /* semantic profit/loss */
+    --profit:         142 71% 45%;
+    --loss:           0 72% 51%;
+    --profit-subtle:  142 71% 45% / 0.10;
+    --loss-subtle:    0 72% 51% / 0.10;
+
+    /* sidebar */
+    --sidebar-w:      224px;
+    --sidebar-collapsed-w: 56px;
+  }
+
+  /* ── Light theme ── */
+  .light {
+    --background:     210 20% 97%;
+    --foreground:     220 13% 13%;
+    --card:           0 0% 100%;
+    --card-foreground:220 13% 13%;
+    --popover:        0 0% 100%;
+    --popover-foreground: 220 13% 13%;
+    --primary:        213 60% 44%;
+    --primary-foreground: 0 0% 100%;
+    --secondary:      210 14% 93%;
+    --secondary-foreground: 220 10% 35%;
+    --muted:          210 14% 94%;
+    --muted-foreground: 215 10% 52%;
+    --accent:         210 14% 91%;
+    --accent-foreground: 220 13% 13%;
+    --destructive:    0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border:         220 9% 87%;
+    --input:          220 9% 92%;
+    --ring:           213 60% 44%;
+
+    --profit:         142 65% 36%;
+    --loss:           0 72% 46%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-    box-sizing: border-box;
-  }
+  * { @apply border-border; box-sizing: border-box; }
+
+  html { font-size: 15px; }
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'DM Sans', sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-feature-settings: "cv11" 1, "ss01" 1;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 600;
+  h1, h2, h3, h4, h5 {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    letter-spacing: -0.02em;
   }
 
-  code, pre, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+  .font-mono, code, pre, kbd {
+    font-family: 'IBM Plex Mono', monospace;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  ::-webkit-scrollbar-track {
-    background: hsl(var(--muted));
-  }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
-    border-radius: 2px;
+    border-radius: 10px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
-  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
 }
 
 @layer utilities {
-  .profit { color: #22c55e; }
-  .loss { color: #ef4444; }
-  .profit-bg { background-color: rgba(34,197,94,0.08); }
-  .loss-bg { background-color: rgba(239,68,68,0.08); }
-  .glass {
-    background: rgba(255,255,255,0.03);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.06);
+  /* Profit / Loss colour tokens */
+  .text-profit  { color: hsl(var(--profit)); }
+  .text-loss    { color: hsl(var(--loss)); }
+  .bg-profit-subtle { background-color: hsl(var(--profit-subtle, 142 71% 45% / 0.10)); }
+  .bg-loss-subtle   { background-color: hsl(var(--loss-subtle,   0  72% 51% / 0.10)); }
+
+  /* Card hover lift */
+  .card-hover {
+    @apply transition-all duration-200;
   }
-  .glow-blue {
-    box-shadow: 0 0 30px rgba(59,130,246,0.15);
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: theme('boxShadow.card-hover');
   }
-  .animate-fade-in {
-    animation: fadeIn 0.35s ease-out forwards;
+  .light .card-hover:hover {
+    box-shadow: theme('boxShadow.card-hover-light');
+  }
+
+  /* Button micro-interactions */
+  .btn-press {
+    @apply transition-transform duration-150 active:scale-[0.98];
+  }
+  .btn-press:hover { transform: scale(1.02); }
+
+  /* Skeleton */
+  .skeleton {
+    @apply rounded animate-skeleton bg-secondary/80;
+  }
+
+  /* Page entry animation */
+  .page-enter {
+    animation: fade-in-up 0.28s ease-out both;
+  }
+
+  /* Sidebar overlay backdrop */
+  .drawer-backdrop {
+    @apply fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px];
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
