@@ -6,18 +6,14 @@ import { getTrades } from '@/lib/storage'
 import { buildEquityCurve, buildStrategyStats, computeDashboardStats } from '@/lib/calculations'
 import { EquityChart } from '@/components/charts/EquityChart'
 import { PageWrapper } from '@/components/ui/PageWrapper'
-import { ChartSkeleton } from '@/components/ui/Skeleton'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, Legend,
-} from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import { cn } from '@/lib/utils'
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const Tip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-card border border-border rounded-lg px-3 py-2 text-xs shadow-xl">
-      <div className="text-muted-foreground mb-1.5 font-medium">{label}</div>
+    <div className="card px-3 py-2 text-[12px] shadow-xl">
+      <div className="text-[hsl(var(--fg-muted))] mb-1">{label}</div>
       {payload.map((p: any, i: number) => (
         <div key={i} className="font-mono font-semibold" style={{ color: p.color || p.fill }}>
           {p.name}: {typeof p.value === 'number' ? p.value.toFixed(2) : p.value}
@@ -27,221 +23,146 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   )
 }
 
+const ax = { tick: { fontSize: 10, fill: 'hsl(var(--fg-subtle))', fontFamily: 'Geist Mono, monospace' }, tickLine: false as const, axisLine: false as const }
+const P = 'hsl(142 76% 42%)'
+const L = 'hsl(0 72% 51%)'
+const B = 'hsl(var(--fg-muted))'
+
 export default function AnalyticsPage() {
   const [trades, setTrades] = useState<Trade[]>([])
   const [loaded, setLoaded] = useState(false)
 
-  useEffect(() => {
-    setTrades(getTrades())
-    setLoaded(true)
-  }, [])
+  useEffect(() => { setTrades(getTrades()); setLoaded(true) }, [])
 
-  const equityData     = buildEquityCurve(trades)
-  const strategyStats  = buildStrategyStats(trades)
-  const stats          = computeDashboardStats(trades)
+  const eq      = buildEquityCurve(trades)
+  const strats  = buildStrategyStats(trades)
+  const stats   = computeDashboardStats(trades)
 
-  const winLossData = [
-    { name: 'Wins',      value: stats.totalWins },
-    { name: 'Losses',    value: stats.totalLosses },
-    { name: 'Breakeven', value: trades.filter(t => t.result === 'Breakeven').length },
-  ].filter(d => d.value > 0)
+  const pie     = [{ name: 'Wins', value: stats.totalWins }, { name: 'Losses', value: stats.totalLosses }, { name: 'BE', value: trades.filter(t => t.result === 'Breakeven').length }].filter(d => d.value > 0)
+  const days    = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((day,i) => { const dt = trades.filter(t => new Date(t.date).getDay() === i); return { day, pnl: parseFloat(dt.reduce((s,t) => s+t.pnl,0).toFixed(2)) } })
+  const monthly = (() => { const m = new Map<string,number>(); trades.forEach(t => m.set(t.date.substring(0,7),(m.get(t.date.substring(0,7))||0)+t.pnl)); return Array.from(m.entries()).sort(([a],[b])=>a.localeCompare(b)).map(([mo,pnl])=>({month:mo.replace('-','/'),pnl:parseFloat(pnl.toFixed(2))})) })()
+  const rDist   = (() => { const b: Record<string,number> = {'<-2R':0,'-2R→-1R':0,'-1R→0R':0,'0R→1R':0,'1R→2R':0,'2R→3R':0,'>3R':0}; trades.forEach(t => { const r=t.rMultiple; if(r<-2)b['<-2R']++;else if(r<-1)b['-2R→-1R']++;else if(r<0)b['-1R→0R']++;else if(r<1)b['0R→1R']++;else if(r<2)b['1R→2R']++;else if(r<3)b['2R→3R']++;else b['>3R']++ }); return Object.entries(b).map(([r,count])=>({r,count})) })()
 
-  const dayDist = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((day, i) => {
-    const dayTrades = trades.filter(t => new Date(t.date).getDay() === i)
-    return { day, count: dayTrades.length, pnl: parseFloat(dayTrades.reduce((s,t) => s + t.pnl, 0).toFixed(2)) }
-  })
+  const card = 'card p-5'
+  const fmtY = (v: number) => `$${Math.abs(v)>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0)}`
 
-  const monthlyMap = new Map<string, number>()
-  trades.forEach(t => {
-    const m = t.date.substring(0, 7)
-    monthlyMap.set(m, (monthlyMap.get(m) || 0) + t.pnl)
-  })
-  const monthlyData = Array.from(monthlyMap.entries())
-    .sort(([a],[b]) => a.localeCompare(b))
-    .map(([month, pnl]) => ({ month: month.replace('-', '/'), pnl: parseFloat(pnl.toFixed(2)) }))
+  if (!loaded) return (
+    <PageWrapper>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {Array.from({length:6}).map((_,i) => <div key={i} className={cn(card,'space-y-3')}><div className="skeleton h-4 w-32 rounded"/><div className="skeleton w-full h-48 rounded-lg"/></div>)}
+      </div>
+    </PageWrapper>
+  )
 
-  const rBuckets: Record<string,number> = {'< -2R':0,'-2R to -1R':0,'-1R to 0R':0,'0R to 1R':0,'1R to 2R':0,'2R to 3R':0,'> 3R':0}
-  trades.forEach(t => {
-    const r = t.rMultiple
-    if (r < -2) rBuckets['< -2R']++
-    else if (r < -1) rBuckets['-2R to -1R']++
-    else if (r < 0)  rBuckets['-1R to 0R']++
-    else if (r < 1)  rBuckets['0R to 1R']++
-    else if (r < 2)  rBuckets['1R to 2R']++
-    else if (r < 3)  rBuckets['2R to 3R']++
-    else rBuckets['> 3R']++
-  })
-  const rDistData = Object.entries(rBuckets).map(([r, count]) => ({ r, count }))
-
-  const card = 'rounded-lg border border-border bg-card p-5 shadow-card'
-  const axisProps = {
-    tick: { fontSize: 10, fill: 'hsl(215 10% 46%)' },
-    tickLine: false as const,
-    axisLine: false as const,
-  }
-
-  if (!loaded) {
-    return (
-      <PageWrapper>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {Array.from({length:6}).map((_,i) => <ChartSkeleton key={i} height={200} />)}
-        </div>
-      </PageWrapper>
-    )
-  }
-
-  if (trades.length === 0) {
-    return (
-      <PageWrapper>
-        <div className="flex items-center justify-center h-64 rounded-lg border border-border bg-card text-muted-foreground text-sm">
-          No data yet — add some trades first
-        </div>
-      </PageWrapper>
-    )
-  }
+  if (!trades.length) return (
+    <PageWrapper><div className={cn(card,'flex items-center justify-center h-64 text-[hsl(var(--fg-muted))] text-[13px]')}>No data yet — add some trades first</div></PageWrapper>
+  )
 
   return (
     <PageWrapper>
-      {/* Equity curve — full width */}
-      <div className={cn(card, 'mb-4')}>
-        <h2 className="font-semibold text-foreground text-sm mb-4">Equity Curve</h2>
-        <EquityChart data={equityData} height={220} />
+      <div className={cn(card,'mb-4')}>
+        <div className="text-[13px] font-semibold text-[hsl(var(--fg))] mb-4">Equity Curve</div>
+        <EquityChart data={eq} height={220} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        {/* PnL by Strategy */}
+        {/* Strategy PnL */}
         <div className={card}>
-          <h2 className="font-semibold text-foreground text-sm mb-4">PnL by Strategy</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={strategyStats} margin={{top:4,right:4,left:0,bottom:4}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 10% 16%)" vertical={false} />
-              <XAxis dataKey="strategy" {...axisProps} />
-              <YAxis {...axisProps}
-                tickFormatter={v => `$${Math.abs(v) >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(0)}`}
-                width={46}
-              />
-              <Tooltip content={<CustomTooltip />} />
+          <div className="text-[13px] font-semibold text-[hsl(var(--fg))] mb-4">PnL by Strategy</div>
+          <ResponsiveContainer width="100%" height={190}>
+            <BarChart data={strats} margin={{top:4,right:4,left:0,bottom:4}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="strategy" {...ax} />
+              <YAxis {...ax} tickFormatter={fmtY} width={46} />
+              <Tooltip content={<Tip />} />
               <Bar dataKey="totalPnl" name="PnL" radius={[3,3,0,0]}>
-                {strategyStats.map((e,i) => (
-                  <Cell key={i} fill={e.totalPnl >= 0 ? 'hsl(142 71% 45%)' : 'hsl(0 72% 51%)'} fillOpacity={0.85} />
-                ))}
+                {strats.map((e,i) => <Cell key={i} fill={e.totalPnl>=0?P:L} fillOpacity={0.9} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Win/Loss Pie */}
+        {/* Pie */}
         <div className={card}>
-          <h2 className="font-semibold text-foreground text-sm mb-4">Win / Loss Split</h2>
-          <ResponsiveContainer width="100%" height={200}>
+          <div className="text-[13px] font-semibold text-[hsl(var(--fg))] mb-4">Win / Loss Split</div>
+          <ResponsiveContainer width="100%" height={190}>
             <PieChart>
-              <Pie data={winLossData} cx="50%" cy="50%" innerRadius={55} outerRadius={80}
-                paddingAngle={3} dataKey="value">
-                {winLossData.map((_,i) => (
-                  <Cell key={i}
-                    fill={i===0 ? 'hsl(142 71% 45%)' : i===1 ? 'hsl(0 72% 51%)' : 'hsl(45 80% 52%)'}
-                    fillOpacity={0.85}
-                  />
-                ))}
+              <Pie data={pie} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={3} dataKey="value">
+                {pie.map((_,i) => <Cell key={i} fill={[P,L,'hsl(45 80% 52%)'][i]} fillOpacity={0.9} />)}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend formatter={v => <span className="text-xs text-muted-foreground">{v}</span>} />
+              <Tooltip content={<Tip />} />
+              <Legend formatter={v => <span className="text-[11px] text-[hsl(var(--fg-muted))]">{v}</span>} />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Monthly PnL */}
+        {/* Monthly */}
         <div className={card}>
-          <h2 className="font-semibold text-foreground text-sm mb-4">Monthly PnL</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={monthlyData} margin={{top:4,right:4,left:0,bottom:4}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 10% 16%)" vertical={false} />
-              <XAxis dataKey="month" {...axisProps} />
-              <YAxis {...axisProps}
-                tickFormatter={v => `$${Math.abs(v) >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(0)}`}
-                width={46}
-              />
-              <Tooltip content={<CustomTooltip />} />
+          <div className="text-[13px] font-semibold text-[hsl(var(--fg))] mb-4">Monthly PnL</div>
+          <ResponsiveContainer width="100%" height={190}>
+            <BarChart data={monthly} margin={{top:4,right:4,left:0,bottom:4}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="month" {...ax} />
+              <YAxis {...ax} tickFormatter={fmtY} width={46} />
+              <Tooltip content={<Tip />} />
               <Bar dataKey="pnl" name="PnL" radius={[3,3,0,0]}>
-                {monthlyData.map((e,i) => (
-                  <Cell key={i} fill={e.pnl >= 0 ? 'hsl(213 60% 52%)' : 'hsl(0 72% 51%)'} fillOpacity={0.85} />
-                ))}
+                {monthly.map((e,i) => <Cell key={i} fill={e.pnl>=0?B:L} fillOpacity={0.9} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* R Multiple Distribution */}
+        {/* R dist */}
         <div className={card}>
-          <h2 className="font-semibold text-foreground text-sm mb-4">R Multiple Distribution</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={rDistData} margin={{top:4,right:4,left:0,bottom:4}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 10% 16%)" vertical={false} />
-              <XAxis dataKey="r" {...axisProps} tick={{...axisProps.tick, fontSize:9}} />
-              <YAxis {...axisProps} width={28} />
-              <Tooltip content={<CustomTooltip />} />
+          <div className="text-[13px] font-semibold text-[hsl(var(--fg))] mb-4">R Multiple Distribution</div>
+          <ResponsiveContainer width="100%" height={190}>
+            <BarChart data={rDist} margin={{top:4,right:4,left:0,bottom:4}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="r" {...ax} tick={{...ax.tick,fontSize:9}} />
+              <YAxis {...ax} width={28} />
+              <Tooltip content={<Tip />} />
               <Bar dataKey="count" name="Trades" radius={[3,3,0,0]}>
-                {rDistData.map((e,i) => (
-                  <Cell key={i}
-                    fill={e.r.startsWith('<') || e.r.startsWith('-') ? 'hsl(0 72% 51%)' : 'hsl(142 71% 45%)'}
-                    fillOpacity={0.85}
-                  />
-                ))}
+                {rDist.map((e,i) => <Cell key={i} fill={e.r.startsWith('<')||e.r.startsWith('-')?L:P} fillOpacity={0.9} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Day of week */}
-      <div className={cn(card, 'mb-4')}>
-        <h2 className="font-semibold text-foreground text-sm mb-4">PnL by Day of Week</h2>
-        <ResponsiveContainer width="100%" height={160}>
-          <BarChart data={dayDist} margin={{top:4,right:4,left:0,bottom:4}}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 10% 16%)" vertical={false} />
-            <XAxis dataKey="day" {...axisProps} />
-            <YAxis {...axisProps}
-              tickFormatter={v => `$${Math.abs(v) >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(0)}`}
-              width={46}
-            />
-            <Tooltip content={<CustomTooltip />} />
+      <div className={cn(card,'mb-4')}>
+        <div className="text-[13px] font-semibold text-[hsl(var(--fg))] mb-4">PnL by Day of Week</div>
+        <ResponsiveContainer width="100%" height={150}>
+          <BarChart data={days} margin={{top:4,right:4,left:0,bottom:4}}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis dataKey="day" {...ax} />
+            <YAxis {...ax} tickFormatter={fmtY} width={46} />
+            <Tooltip content={<Tip />} />
             <Bar dataKey="pnl" name="PnL" radius={[3,3,0,0]}>
-              {dayDist.map((e,i) => (
-                <Cell key={i} fill={e.pnl >= 0 ? 'hsl(213 60% 52%)' : 'hsl(0 72% 51%)'} fillOpacity={0.85} />
-              ))}
+              {days.map((e,i) => <Cell key={i} fill={e.pnl>=0?B:L} fillOpacity={0.9} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Strategy table */}
       <div className={card}>
-        <h2 className="font-semibold text-foreground text-sm mb-4">Strategy Breakdown</h2>
+        <div className="text-[13px] font-semibold text-[hsl(var(--fg))] mb-4">Strategy Breakdown</div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-border">
+              <tr className="border-b border-[hsl(var(--border))]">
                 {['Strategy','Trades','Win Rate','Total PnL','Avg R'].map(h => (
-                  <th key={h} className="px-3 py-2.5 text-left text-[11px] font-medium text-muted-foreground uppercase tracking-[0.08em]">
-                    {h}
-                  </th>
+                  <th key={h} className="px-3 py-2.5 text-left text-[11px] font-medium text-[hsl(var(--fg-muted))] uppercase tracking-[0.07em]">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
-              {strategyStats.map(s => (
-                <tr key={s.strategy} className="hover:bg-accent/60 transition-colors">
-                  <td className="px-3 py-3 font-medium text-foreground text-sm">{s.strategy}</td>
-                  <td className="px-3 py-3 font-mono text-xs text-muted-foreground">{s.trades}</td>
-                  <td className={cn('px-3 py-3 font-mono text-xs', s.winRate >= 50 ? 'text-profit' : 'text-loss')}>
-                    {s.winRate.toFixed(1)}%
-                  </td>
-                  <td className={cn('px-3 py-3 font-mono font-semibold text-sm', s.totalPnl >= 0 ? 'text-profit' : 'text-loss')}>
-                    {s.totalPnl >= 0 ? '+' : ''}{s.totalPnl.toFixed(2)}
-                  </td>
-                  <td className={cn('px-3 py-3 font-mono text-xs', s.avgRMultiple >= 0 ? 'text-profit' : 'text-loss')}>
-                    {s.avgRMultiple >= 0 ? '+' : ''}{s.avgRMultiple.toFixed(2)}R
-                  </td>
+            <tbody className="divide-y divide-[hsl(var(--border))]">
+              {strats.map(s => (
+                <tr key={s.strategy} className="hover:bg-[hsl(var(--bg-overlay))] transition-colors">
+                  <td className="px-3 py-3 font-medium text-[hsl(var(--fg))]">{s.strategy}</td>
+                  <td className="px-3 py-3 font-mono text-[12px] text-[hsl(var(--fg-muted))]">{s.trades}</td>
+                  <td className={cn('px-3 py-3 font-mono text-[12px]', s.winRate>=50?'text-profit':'text-loss')}>{s.winRate.toFixed(1)}%</td>
+                  <td className={cn('px-3 py-3 font-mono font-semibold text-[13px]', s.totalPnl>=0?'text-profit':'text-loss')}>{s.totalPnl>=0?'+':''}{s.totalPnl.toFixed(2)}</td>
+                  <td className={cn('px-3 py-3 font-mono text-[12px]', s.avgRMultiple>=0?'text-profit':'text-loss')}>{s.avgRMultiple>=0?'+':''}{s.avgRMultiple.toFixed(2)}R</td>
                 </tr>
               ))}
             </tbody>

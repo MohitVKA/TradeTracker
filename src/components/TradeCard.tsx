@@ -5,92 +5,77 @@ import { cn } from '@/lib/utils'
 import { Pencil, Trash2 } from 'lucide-react'
 
 interface TradeCardProps {
-  trade: Trade
-  onEdit?: (trade: Trade) => void
+  trade:     Trade
+  onEdit?:   (t: Trade) => void
   onDelete?: (id: string) => void
 }
 
 export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
-  const isProfit = trade.pnl >= 0
+  const profit = trade.pnl >= 0
 
   return (
-    <div className={cn(
-      'rounded-lg border bg-card p-4 transition-all duration-150',
-      'shadow-card hover:shadow-card-hover card-hover',
-      isProfit ? 'border-l-2 border-l-profit border-border' : 'border-l-2 border-l-loss border-border'
-    )}>
-      {/* Row 1: Asset + PnL */}
+    <div
+      className={cn(
+        'card p-4 transition-all duration-150',
+        'border-l-[2px]',
+        profit ? 'border-l-[hsl(var(--profit))]' : 'border-l-[hsl(var(--loss))]',
+      )}
+    >
+      {/* Row 1 */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-foreground text-base">{trade.asset}</span>
-          <span className={cn(
-            'inline-block px-1.5 py-0.5 rounded text-[11px] font-medium',
-            trade.tradeType === 'Long' ? 'bg-profit-subtle text-profit' : 'bg-loss-subtle text-loss'
-          )}>
+          <span className="font-semibold text-[hsl(var(--fg))] text-[15px] leading-none">{trade.asset}</span>
+          <span className={cn('badge', trade.tradeType === 'Long' ? 'badge-profit' : 'badge-loss')}>
             {trade.tradeType}
           </span>
         </div>
-        <div className={cn(
-          'text-base font-semibold font-mono',
-          isProfit ? 'text-profit' : 'text-loss'
+        <span className={cn(
+          'font-mono font-semibold text-[15px] leading-none',
+          profit ? 'text-profit' : 'text-loss',
         )}>
-          {isProfit ? '+' : ''}{trade.pnl.toFixed(2)}
-        </div>
+          {profit ? '+' : ''}{trade.pnl.toFixed(2)}
+        </span>
       </div>
 
-      {/* Row 2: Stats grid */}
-      <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-xs mb-3">
-        <div>
-          <div className="text-muted-foreground mb-0.5">Entry</div>
-          <div className="font-mono text-foreground">{trade.entryPrice.toFixed(2)}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground mb-0.5">Exit</div>
-          <div className="font-mono text-foreground">{trade.exitPrice.toFixed(2)}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground mb-0.5">R Multiple</div>
-          <div className={cn('font-mono font-medium', isProfit ? 'text-profit' : 'text-loss')}>
-            {trade.rMultiple >= 0 ? '+' : ''}{trade.rMultiple.toFixed(2)}R
+      {/* Row 2 - stats */}
+      <div className="grid grid-cols-3 gap-x-3 gap-y-2.5 text-[12px]">
+        {[
+          { label: 'Entry',    val: trade.entryPrice.toFixed(2),   mono: true },
+          { label: 'Exit',     val: trade.exitPrice.toFixed(2),    mono: true },
+          {
+            label: 'R',
+            val: `${trade.rMultiple >= 0 ? '+' : ''}${trade.rMultiple.toFixed(2)}R`,
+            mono: true,
+            color: profit ? 'text-profit' : 'text-loss',
+          },
+          { label: 'Strategy', val: trade.strategy,                mono: false },
+          { label: 'Date',     val: trade.date,                    mono: true },
+          {
+            label: 'Result',
+            val: null,
+            badge: trade.result,
+          },
+        ].map(({ label, val, mono, color, badge }) => (
+          <div key={label}>
+            <div className="text-[hsl(var(--fg-subtle))] mb-0.5">{label}</div>
+            {badge
+              ? <span className={cn('badge', badge === 'Win' ? 'badge-profit' : badge === 'Loss' ? 'badge-loss' : 'badge-neutral')}>{badge}</span>
+              : <div className={cn(mono && 'font-mono', 'text-[hsl(var(--fg))]', color)}>{val}</div>
+            }
           </div>
-        </div>
-        <div>
-          <div className="text-muted-foreground mb-0.5">Strategy</div>
-          <div className="text-foreground truncate">{trade.strategy}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground mb-0.5">Date</div>
-          <div className="font-mono text-foreground">{trade.date}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground mb-0.5">Result</div>
-          <span className={cn(
-            'inline-block px-1.5 py-0.5 rounded text-[11px] font-medium',
-            trade.result === 'Win'  ? 'bg-profit-subtle text-profit' :
-            trade.result === 'Loss' ? 'bg-loss-subtle text-loss' :
-            'bg-secondary text-muted-foreground'
-          )}>
-            {trade.result}
-          </span>
-        </div>
+        ))}
       </div>
 
-      {/* Row 3: Actions */}
+      {/* Actions */}
       {(onEdit || onDelete) && (
-        <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border/60">
+        <div className="flex items-center justify-end gap-1.5 mt-3 pt-3 border-t border-[hsl(var(--border))]">
           {onEdit && (
-            <button
-              onClick={() => onEdit(trade)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-primary hover:bg-accent transition-colors"
-            >
+            <button onClick={() => onEdit(trade)} className="btn btn-secondary btn-sm gap-1.5">
               <Pencil className="w-3 h-3" /> Edit
             </button>
           )}
           {onDelete && (
-            <button
-              onClick={() => onDelete(trade.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-loss hover:bg-loss-subtle transition-colors"
-            >
+            <button onClick={() => onDelete(trade.id)} className="btn btn-danger btn-sm gap-1.5">
               <Trash2 className="w-3 h-3" /> Delete
             </button>
           )}

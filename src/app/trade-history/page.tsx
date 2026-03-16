@@ -10,152 +10,106 @@ import { FloatingActionButton } from '@/components/ui/FloatingActionButton'
 import { Download, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type ResultFilter = 'All' | 'Win' | 'Loss' | 'Breakeven'
-type TypeFilter   = 'All' | 'Long' | 'Short'
+type R = 'All' | 'Win' | 'Loss' | 'Breakeven'
+type T = 'All' | 'Long' | 'Short'
 
 export default function TradeHistoryPage() {
-  const [trades, setTrades]         = useState<Trade[]>([])
-  const [loaded, setLoaded]         = useState(false)
-  const [search, setSearch]         = useState('')
-  const [filterResult, setFilterResult] = useState<ResultFilter>('All')
-  const [filterType, setFilterType] = useState<TypeFilter>('All')
-  const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
+  const [trades,      setTrades]       = useState<Trade[]>([])
+  const [loaded,      setLoaded]       = useState(false)
+  const [search,      setSearch]       = useState('')
+  const [fResult,     setFResult]      = useState<R>('All')
+  const [fType,       setFType]        = useState<T>('All')
+  const [editing,     setEditing]      = useState<Trade | null>(null)
 
-  useEffect(() => {
-    setTrades(getTrades())
-    setLoaded(true)
-  }, [])
-
+  useEffect(() => { setTrades(getTrades()); setLoaded(true) }, [])
   const reload = () => setTrades(getTrades())
-
-  const handleDelete = (id: string) => {
-    if (!confirm('Delete this trade?')) return
-    deleteTrade(id)
-    reload()
-  }
-
-  const handleUpdate = (updated: Trade) => {
-    updateTrade(updated)
-    setEditingTrade(null)
-    reload()
-  }
 
   const filtered = trades.filter(t => {
     const q = search.toLowerCase()
-    const matchSearch = !q ||
-      t.asset.toLowerCase().includes(q) ||
-      t.strategy.toLowerCase().includes(q) ||
-      t.notes.toLowerCase().includes(q)
-    const matchResult = filterResult === 'All' || t.result === filterResult
-    const matchType   = filterType   === 'All' || t.tradeType === filterType
-    return matchSearch && matchResult && matchType
+    return (
+      (!q || t.asset.toLowerCase().includes(q) || t.strategy.toLowerCase().includes(q) || t.notes.toLowerCase().includes(q)) &&
+      (fResult === 'All' || t.result    === fResult) &&
+      (fType   === 'All' || t.tradeType === fType)
+    )
   })
 
-  const inputCls = 'bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all'
+  const filterPill = (label: string, active: boolean, color: 'profit' | 'loss' | 'none', onClick: () => void) => (
+    <button
+      key={label}
+      onClick={onClick}
+      className={cn(
+        'btn btn-sm rounded-full',
+        active
+          ? color === 'profit' ? '!bg-[hsl(var(--profit))] !text-white !border-[hsl(var(--profit))]'
+          : color === 'loss'   ? '!bg-[hsl(var(--loss))] !text-white !border-[hsl(var(--loss))]'
+          : 'btn-primary'
+          : 'btn-secondary',
+      )}
+    >
+      {label}
+    </button>
+  )
 
   return (
     <PageWrapper>
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
         {/* Search */}
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[hsl(var(--fg-subtle))] pointer-events-none" />
           <input
             placeholder="Search asset, strategy, notes…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className={cn(inputCls, 'pl-9 w-full')}
+            className="input w-full"
+            style={{ paddingLeft: 36 }}
           />
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground hover:text-foreground"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 btn btn-ghost btn-icon"
+              style={{ width: 20, height: 20 }}
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3 h-3" />
             </button>
           )}
         </div>
 
-        {/* Result filter pills */}
-        <div className="flex gap-1 bg-secondary border border-border rounded-md p-1 shrink-0">
-          {(['All', 'Win', 'Loss', 'Breakeven'] as ResultFilter[]).map(r => (
-            <button
-              key={r}
-              onClick={() => setFilterResult(r)}
-              className={cn(
-                'px-2.5 py-1 rounded-sm text-xs font-medium transition-all duration-100',
-                filterResult === r
-                  ? r === 'Win'  ? 'bg-profit-subtle text-profit'
-                  : r === 'Loss' ? 'bg-loss-subtle text-loss'
-                  : 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {r}
-            </button>
-          ))}
+        {/* Result filter */}
+        <div className="flex gap-1 flex-wrap">
+          {(['All','Win','Loss','Breakeven'] as R[]).map(r =>
+            filterPill(r, fResult === r, r === 'Win' ? 'profit' : r === 'Loss' ? 'loss' : 'none', () => setFResult(r))
+          )}
         </div>
 
-        {/* Type filter pills */}
-        <div className="flex gap-1 bg-secondary border border-border rounded-md p-1 shrink-0">
-          {(['All', 'Long', 'Short'] as TypeFilter[]).map(t => (
-            <button
-              key={t}
-              onClick={() => setFilterType(t)}
-              className={cn(
-                'px-2.5 py-1 rounded-sm text-xs font-medium transition-all duration-100',
-                filterType === t
-                  ? t === 'Long'  ? 'bg-profit-subtle text-profit'
-                  : t === 'Short' ? 'bg-loss-subtle text-loss'
-                  : 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t}
-            </button>
-          ))}
+        {/* Type filter */}
+        <div className="flex gap-1">
+          {(['All','Long','Short'] as T[]).map(t =>
+            filterPill(t, fType === t, t === 'Long' ? 'profit' : t === 'Short' ? 'loss' : 'none', () => setFType(t))
+          )}
         </div>
 
         {/* Export */}
-        <button
-          onClick={() => exportTradesToCSV(filtered)}
-          className="flex items-center gap-2 px-3 py-2 rounded-md bg-card border border-border text-sm font-medium text-foreground hover:bg-accent transition-all btn-press shrink-0"
-        >
+        <button onClick={() => exportTradesToCSV(filtered)} className="btn btn-secondary shrink-0">
           <Download className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Export CSV</span>
         </button>
       </div>
 
-      {/* Count */}
-      <p className="text-xs text-muted-foreground mb-3">
+      <p className="text-[12px] text-[hsl(var(--fg-muted))] mb-3">
         {filtered.length} of {trades.length} trade{trades.length !== 1 ? 's' : ''}
       </p>
 
-      <TradeTable
-        trades={filtered}
-        onEdit={setEditingTrade}
-        onDelete={handleDelete}
-        loading={!loaded}
-      />
+      <TradeTable trades={filtered} onEdit={setEditing} onDelete={id => { if (confirm('Delete this trade?')) { deleteTrade(id); reload() } }} loading={!loaded} />
 
       {/* Edit modal */}
-      {editingTrade && (
+      {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[3px] p-4">
-          <div className="bg-card border border-border rounded-xl p-5 md:p-6 w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl">
+          <div className="card p-5 md:p-6 w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold">Edit Trade</h2>
-              <button
-                onClick={() => setEditingTrade(null)}
-                className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <span className="text-[14px] font-semibold">Edit Trade</span>
+              <button onClick={() => setEditing(null)} className="btn btn-ghost btn-icon"><X className="w-4 h-4" /></button>
             </div>
-            <TradeForm
-              initial={editingTrade}
-              onSubmit={handleUpdate}
-              onCancel={() => setEditingTrade(null)}
-            />
+            <TradeForm initial={editing} onSubmit={t => { updateTrade(t); setEditing(null); reload() }} onCancel={() => setEditing(null)} />
           </div>
         </div>
       )}

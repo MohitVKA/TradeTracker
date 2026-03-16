@@ -1,89 +1,78 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { LucideIcon } from 'lucide-react'
 
 interface StatsCardProps {
-  title: string
-  value: string
-  subtitle?: string
-  icon?: LucideIcon
-  trend?: 'up' | 'down' | 'neutral'
-  trendValue?: string
-  className?: string
+  title:       string
+  value:       string
+  subtitle?:   string
+  icon?:       LucideIcon
+  trend?:      'up' | 'down' | 'neutral'
+  trendLabel?: string
+  className?:  string
   valueColor?: 'profit' | 'loss' | 'default'
-  loading?: boolean
+  loading?:    boolean
 }
 
 export function StatsCard({
   title, value, subtitle, icon: Icon,
-  trend, trendValue, className,
+  trend, trendLabel, className,
   valueColor = 'default',
   loading = false,
 }: StatsCardProps) {
   if (loading) {
     return (
-      <div className={cn(
-        'rounded-lg border border-border bg-card p-5 flex flex-col gap-3',
-        className
-      )}>
+      <div className={cn('card p-4 flex flex-col gap-3', className)}>
         <div className="flex items-center justify-between">
-          <div className="h-3 w-20 skeleton rounded" />
-          <div className="h-7 w-7 skeleton rounded-md" />
+          <div className="skeleton h-[11px] w-20 rounded" />
+          <div className="skeleton h-6 w-6 rounded-md" />
         </div>
-        <div className="h-8 w-28 skeleton rounded" />
-        <div className="h-3.5 w-24 skeleton rounded" />
+        <div className="skeleton h-7 w-28 rounded" />
+        <div className="skeleton h-[11px] w-20 rounded" />
       </div>
     )
   }
 
-  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus
-
   return (
-    <div className={cn(
-      'rounded-lg border border-border bg-card p-5 flex flex-col gap-2.5',
-      'shadow-card hover:shadow-card-hover card-hover',
-      'dark:shadow-card dark:hover:shadow-card-hover',
-      className
-    )}>
-      {/* Label row */}
+    <div className={cn('card card-interactive p-4 flex flex-col gap-2', className)}>
+      {/* Header row */}
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.1em]">
-          {title}
-        </span>
+        <span className="label mb-0">{title}</span>
         {Icon && (
-          <div className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center">
-            <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+          <div className="w-6 h-6 rounded-md bg-[hsl(var(--bg-overlay))] flex items-center justify-center">
+            <Icon className="w-3 h-3 text-[hsl(var(--fg-subtle))]" strokeWidth={1.8} />
           </div>
         )}
       </div>
 
       {/* Value */}
-      <div className={cn(
-        'text-2xl font-semibold font-mono tracking-tight leading-none',
-        valueColor === 'profit' && 'text-profit',
-        valueColor === 'loss' && 'text-loss',
-        valueColor === 'default' && 'text-foreground',
-      )}>
+      <div
+        className={cn(
+          'text-[22px] font-semibold font-mono tracking-tight leading-none mt-0.5',
+          valueColor === 'profit' && 'text-profit',
+          valueColor === 'loss'   && 'text-loss',
+          valueColor === 'default' && 'text-fg',
+        )}
+      >
         {value}
       </div>
 
-      {/* Trend / subtitle */}
-      {(subtitle || trendValue) && (
-        <div className="flex items-center gap-1.5 mt-0.5">
-          {trendValue && (
+      {/* Trend badge + subtitle */}
+      {(subtitle || trendLabel) && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {trendLabel && (
             <span className={cn(
-              'inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-sm',
-              trend === 'up' && 'bg-profit-subtle text-profit',
-              trend === 'down' && 'bg-loss-subtle text-loss',
-              trend === 'neutral' && 'bg-secondary text-muted-foreground',
+              'badge',
+              trend === 'up'      && 'badge-profit',
+              trend === 'down'    && 'badge-loss',
+              trend === 'neutral' && 'badge-neutral',
             )}>
-              <TrendIcon className="w-2.5 h-2.5" />
-              {trendValue}
+              {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '—'} {trendLabel}
             </span>
           )}
           {subtitle && (
-            <span className="text-xs text-muted-foreground">{subtitle}</span>
+            <span className="text-[12px] text-[hsl(var(--fg-muted))]">{subtitle}</span>
           )}
         </div>
       )}

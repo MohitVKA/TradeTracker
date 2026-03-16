@@ -5,93 +5,140 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, PlusCircle, BookOpen,
   BarChart3, Brain, Settings, TrendingUp,
-  ChevronsLeft, ChevronsRight, X
+  ChevronsLeft, ChevronsRight, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/context/SidebarContext'
 
 const navItems = [
-  { href: '/',              label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/new-trade',     label: 'New Trade',   icon: PlusCircle, accent: true },
-  { href: '/trade-history', label: 'History',     icon: BookOpen },
-  { href: '/analytics',     label: 'Analytics',   icon: BarChart3 },
-  { href: '/journal',       label: 'Journal',     icon: Brain },
-  { href: '/settings',      label: 'Settings',    icon: Settings },
+  { href: '/',              label: 'Dashboard',  icon: LayoutDashboard },
+  { href: '/new-trade',     label: 'New Trade',  icon: PlusCircle, cta: true },
+  { href: '/trade-history', label: 'History',    icon: BookOpen },
+  { href: '/analytics',     label: 'Analytics',  icon: BarChart3 },
+  { href: '/journal',       label: 'Journal',    icon: Brain },
+  { href: '/settings',      label: 'Settings',   icon: Settings },
 ]
 
-function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
+function NavItem({
+  href, label, icon: Icon, cta, collapsed, onClick,
+}: {
+  href: string; label: string; icon: any; cta?: boolean
+  collapsed: boolean; onClick?: () => void
+}) {
   const pathname = usePathname()
+  const active   = pathname === href
+
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      title={collapsed ? label : undefined}
+      className={cn(
+        'group relative flex items-center rounded-md text-[13px] font-medium',
+        'transition-all duration-150 select-none',
+        collapsed
+          ? 'justify-center w-9 h-9 mx-auto'
+          : 'gap-2.5 px-3 h-9',
+        active
+          ? 'bg-[hsl(var(--bg-overlay))] text-[hsl(var(--fg))]'
+          : 'text-[hsl(var(--fg-muted))] hover:text-[hsl(var(--fg))] hover:bg-[hsl(var(--bg-overlay))]',
+      )}
+    >
+      {/* Active indicator bar */}
+      {active && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[hsl(var(--fg))]" />
+      )}
+
+      <Icon
+        className={cn('shrink-0', collapsed ? 'w-[17px] h-[17px]' : 'w-[15px] h-[15px]')}
+        strokeWidth={active ? 2.2 : 1.8}
+      />
+
+      {!collapsed && (
+        <>
+          <span className="flex-1 truncate">{label}</span>
+          {/* CTA dot for New Trade */}
+          {cta && !active && (
+            <span className="w-1 h-1 rounded-full bg-[hsl(var(--fg-muted))]" />
+          )}
+        </>
+      )}
+
+      {/* Tooltip when collapsed */}
+      {collapsed && (
+        <span className={cn(
+          'pointer-events-none absolute left-full ml-3 z-50',
+          'px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap',
+          'bg-[hsl(var(--bg-raised))] border border-[hsl(var(--border))]',
+          'text-[hsl(var(--fg))] shadow-lg',
+          'opacity-0 translate-x-1',
+          'group-hover:opacity-100 group-hover:translate-x-0',
+          'transition-all duration-150',
+        )}>
+          {label}
+        </span>
+      )}
+    </Link>
+  )
+}
+
+function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const { isCollapsed, toggleCollapsed } = useSidebar()
 
   return (
-    <div className={cn(
-      'flex flex-col h-full bg-card border-r border-border transition-all duration-200 ease-out',
-      isCollapsed ? 'w-14' : 'w-56'
-    )}>
-      {/* Logo row */}
+    <div
+      className={cn(
+        'flex flex-col h-full border-r transition-all duration-200 ease-out',
+        'bg-[hsl(var(--bg-subtle))] border-[hsl(var(--border))]',
+        isCollapsed ? 'w-[56px]' : 'w-[220px]',
+      )}
+    >
+      {/* Logo */}
       <div className={cn(
-        'flex items-center border-b border-border shrink-0',
-        isCollapsed ? 'justify-center px-0 h-14' : 'gap-2.5 px-4 h-14'
+        'flex items-center h-12 shrink-0 border-b border-[hsl(var(--border))]',
+        isCollapsed ? 'justify-center' : 'gap-2.5 px-4',
       )}>
-        <div className="w-7 h-7 rounded-md bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
-          <TrendingUp className="w-3.5 h-3.5 text-primary" strokeWidth={2.5} />
+        <div className="w-6 h-6 rounded-md bg-[hsl(var(--fg))] flex items-center justify-center shrink-0">
+          <TrendingUp className="w-3.5 h-3.5 text-[hsl(var(--bg))]" strokeWidth={2.5} />
         </div>
         {!isCollapsed && (
-          <div className="overflow-hidden">
-            <div className="font-semibold text-foreground text-sm leading-tight tracking-tight">TradeLog</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-[0.12em] leading-tight">Pro Journal</div>
+          <div>
+            <div className="text-[13px] font-semibold text-[hsl(var(--fg))] leading-tight tracking-tight">
+              TradeLog
+            </div>
+            <div className="text-[10px] text-[hsl(var(--fg-subtle))] uppercase tracking-[0.12em] leading-tight">
+              Journal
+            </div>
           </div>
         )}
       </div>
 
-      {/* Nav */}
-      <nav className={cn('flex-1 py-3 space-y-0.5 overflow-y-auto', isCollapsed ? 'px-1.5' : 'px-2')}>
-        {navItems.map(({ href, label, icon: Icon, accent }) => {
-          const active = pathname === href
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onLinkClick}
-              title={isCollapsed ? label : undefined}
-              className={cn(
-                'flex items-center rounded-md text-sm font-medium transition-all duration-150 group relative',
-                isCollapsed ? 'justify-center w-10 h-10 mx-auto' : 'gap-2.5 px-3 py-2',
-                active
-                  ? 'bg-primary/12 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <Icon className={cn('shrink-0', isCollapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4',
-                active ? 'text-primary' : ''
-              )} />
-              {!isCollapsed && (
-                <>
-                  <span className="truncate">{label}</span>
-                  {accent && !active && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
-                  )}
-                </>
-              )}
-              {/* Tooltip for collapsed state */}
-              {isCollapsed && (
-                <span className="absolute left-full ml-2.5 px-2 py-1 rounded-md bg-popover border border-border text-xs text-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-lg z-50">
-                  {label}
-                </span>
-              )}
-            </Link>
-          )
-        })}
+      {/* Nav items */}
+      <nav className={cn(
+        'flex-1 overflow-y-auto py-3 space-y-0.5',
+        isCollapsed ? 'px-[9px]' : 'px-2',
+      )}>
+        {navItems.map(item => (
+          <NavItem
+            key={item.href}
+            {...item}
+            collapsed={isCollapsed}
+            onClick={onLinkClick}
+          />
+        ))}
       </nav>
 
       {/* Collapse toggle — desktop only */}
-      <div className="hidden md:block border-t border-border p-2">
+      <div className="hidden md:block border-t border-[hsl(var(--border))] p-2">
         <button
           onClick={toggleCollapsed}
           className={cn(
-            'flex items-center rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150',
-            isCollapsed ? 'w-10 h-8 justify-center mx-auto' : 'w-full px-3 py-2 gap-2'
+            'flex items-center rounded-md text-[12px] text-[hsl(var(--fg-muted))]',
+            'hover:text-[hsl(var(--fg))] hover:bg-[hsl(var(--bg-overlay))]',
+            'transition-all duration-150',
+            isCollapsed ? 'w-9 h-9 justify-center mx-auto' : 'w-full px-3 h-9 gap-2',
           )}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isCollapsed
             ? <ChevronsRight className="w-3.5 h-3.5" />
@@ -99,19 +146,10 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
           }
         </button>
       </div>
-
-      {!isCollapsed && (
-        <div className="px-4 pb-3 hidden md:block">
-          <div className="text-[10px] text-muted-foreground/50 text-center leading-relaxed">
-            All data stored locally
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
-/* Desktop sidebar — always visible */
 export function DesktopSidebar() {
   return (
     <aside className="hidden md:flex shrink-0 h-screen sticky top-0">
@@ -120,13 +158,11 @@ export function DesktopSidebar() {
   )
 }
 
-/* Mobile drawer — slides in over content */
 export function MobileDrawer() {
   const { isOpen, closeDrawer } = useSidebar()
 
   return (
     <>
-      {/* Backdrop */}
       {isOpen && (
         <div
           className="drawer-backdrop md:hidden"
@@ -134,19 +170,17 @@ export function MobileDrawer() {
           aria-hidden="true"
         />
       )}
-
-      {/* Drawer panel */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full md:hidden transition-transform duration-200 ease-out shadow-2xl',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed top-0 left-0 z-40 h-full md:hidden shadow-2xl',
+          'transition-transform duration-200 ease-out',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
         aria-label="Navigation"
       >
-        {/* Close button overlay */}
         <button
           onClick={closeDrawer}
-          className="absolute top-3.5 right-3 z-50 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="btn btn-ghost btn-icon absolute top-2.5 right-2 z-50"
           aria-label="Close menu"
         >
           <X className="w-4 h-4" />

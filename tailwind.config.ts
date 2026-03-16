@@ -9,79 +9,53 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-      },
       fontFamily: {
-        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'monospace'],
+        sans:  ['"Geist"', '"Geist Fallback"', 'system-ui', 'sans-serif'],
+        mono:  ['"Geist Mono"', 'monospace'],
+      },
+      colors: {
+        /* Map CSS vars to Tailwind tokens */
+        bg:       'hsl(var(--bg))',
+        subtle:   'hsl(var(--bg-subtle))',
+        raised:   'hsl(var(--bg-raised))',
+        overlay:  'hsl(var(--bg-overlay))',
+        border:   'hsl(var(--border))',
+        fg:       'hsl(var(--fg))',
+        'fg-muted': 'hsl(var(--fg-muted))',
+        'fg-subtle':'hsl(var(--fg-subtle))',
+        primary:  'hsl(var(--primary))',
+        profit:   'hsl(var(--profit))',
+        loss:     'hsl(var(--loss))',
+        /* Aliases */
+        background: 'hsl(var(--bg))',
+        foreground: 'hsl(var(--fg))',
+        card:       'hsl(var(--bg-raised))',
+        secondary:  'hsl(var(--bg-overlay))',
+        muted:      'hsl(var(--bg-subtle))',
+        'muted-foreground': 'hsl(var(--fg-muted))',
+        accent:     'hsl(var(--bg-overlay))',
+        input:      'hsl(var(--bg-overlay))',
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-      },
-      boxShadow: {
-        'card': '0 1px 3px 0 rgba(0,0,0,0.3), 0 1px 2px -1px rgba(0,0,0,0.3)',
-        'card-hover': '0 4px 12px 0 rgba(0,0,0,0.4), 0 2px 4px -1px rgba(0,0,0,0.3)',
-        'card-light': '0 1px 3px 0 rgba(0,0,0,0.08), 0 1px 2px -1px rgba(0,0,0,0.06)',
-        'card-hover-light': '0 4px 12px 0 rgba(0,0,0,0.12), 0 2px 4px -1px rgba(0,0,0,0.08)',
+        DEFAULT: 'var(--radius)',
+        sm: 'calc(var(--radius) - 2px)',
+        md: 'var(--radius)',
+        lg: 'calc(var(--radius) + 2px)',
+        xl: 'calc(var(--radius) + 4px)',
       },
       keyframes: {
-        'slide-in-left': {
-          from: { transform: 'translateX(-100%)' },
-          to: { transform: 'translateX(0)' },
-        },
-        'slide-out-left': {
-          from: { transform: 'translateX(0)' },
-          to: { transform: 'translateX(-100%)' },
-        },
-        'fade-in-up': {
+        fadeUp: {
           from: { opacity: '0', transform: 'translateY(8px)' },
-          to: { opacity: '1', transform: 'translateY(0)' },
+          to:   { opacity: '1', transform: 'translateY(0)' },
         },
-        'skeleton-pulse': {
+        shimmer: {
           '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.4' },
+          '50%':      { opacity: '0.45' },
         },
       },
       animation: {
-        'slide-in-left': 'slide-in-left 0.2s ease-out',
-        'slide-out-left': 'slide-out-left 0.2s ease-in',
-        'fade-in-up': 'fade-in-up 0.3s ease-out forwards',
-        'skeleton': 'skeleton-pulse 1.8s ease-in-out infinite',
+        'fade-up':  'fadeUp 0.25s ease-out both',
+        'shimmer':  'shimmer 1.6s ease-in-out infinite',
       },
     },
   },

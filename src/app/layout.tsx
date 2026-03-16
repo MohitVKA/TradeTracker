@@ -6,27 +6,26 @@ import { DesktopSidebar, MobileDrawer } from '@/components/layout/Sidebar'
 import { Navbar } from '@/components/layout/Navbar'
 
 export const metadata: Metadata = {
-  title: 'TradeLog — Professional Trading Journal',
-  description: 'Track, analyze, and improve your trading performance',
+  title: 'TradeLog',
+  description: 'Professional trading journal',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-background text-foreground antialiased">
+      <body>
         <ThemeProvider>
           <SidebarProvider>
-            <div className="flex h-screen overflow-hidden">
-              {/* Desktop sidebar */}
+            <div className="flex h-screen overflow-hidden" style={{ background: 'hsl(var(--bg))' }}>
               <DesktopSidebar />
-
-              {/* Mobile drawer */}
               <MobileDrawer />
-
-              {/* Main content area */}
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <Navbar />
-                <main className="flex-1 overflow-y-auto">
+                <main className="flex-1 overflow-y-auto" style={{ background: 'hsl(var(--bg))' }}>
                   {children}
                 </main>
               </div>
