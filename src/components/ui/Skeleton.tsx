@@ -1,12 +1,17 @@
 import { cn } from '@/lib/utils'
+import React from 'react'
 
-interface SkeletonProps {
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string
 }
 
-export function Skeleton({ className }: SkeletonProps) {
+export function Skeleton({ className, ...props }: SkeletonProps) {
   return (
-    <div className={cn('skeleton', className)} aria-hidden="true" />
+    <div
+      className={cn('skeleton', className)}
+      aria-hidden="true"
+      {...props}
+    />
   )
 }
 
@@ -32,9 +37,13 @@ export function TableSkeleton({ rows = 6 }: { rows?: number }) {
           <Skeleton key={i} className="h-3" style={{ width: w }} />
         ))}
       </div>
+
       {/* Rows */}
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="px-4 py-3.5 flex gap-4 border-b border-border last:border-0">
+        <div
+          key={i}
+          className="px-4 py-3.5 flex gap-4 border-b border-border last:border-0"
+        >
           {[60, 80, 50, 90, 60, 60, 70, 50, 60].map((w, j) => (
             <Skeleton key={j} className="h-3" style={{ width: w }} />
           ))}
@@ -52,8 +61,10 @@ export function ChartSkeleton({ height = 220 }: { height?: number }) {
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-44" />
         </div>
+
         <Skeleton className="h-7 w-20 rounded-lg" />
       </div>
+
       <Skeleton className="w-full rounded-lg" style={{ height }} />
     </div>
   )
